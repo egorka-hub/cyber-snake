@@ -1,0 +1,10 @@
+# Бинарник, создаваемый go build
+/cyber-snake
+*.exe
+
+# IDE
+.idea/
+.vscode/
+
+# macOS
+.DS_Store
