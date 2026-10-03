@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/nsf/termbox-go"
+)
 
 type Point struct {
 	x, y int
@@ -47,9 +51,51 @@ func dirName(d Point) string {
 	return "неизвестно"
 }
 
-func main() {
-	g := NewGame(40, 20)
+func (g *Game) draw() {
+	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	right := g.width + 1
+	bottom := g.height + 1
+	fg, bg := termbox.ColorDefault, termbox.ColorDefault
+
+	for x := 1; x < right; x++ {
+		termbox.SetCell(x, 0, '─', fg, bg)
+		termbox.SetCell(x, bottom, '─', fg, bg)
+	}
+
+	for y := 1; y < bottom; y++ {
+		termbox.SetCell(0, y, '│', fg, bg)
+		termbox.SetCell(right, y, '│', fg, bg)
+	}
+
+	termbox.SetCell(0, 0, '┌', fg, bg)
+	termbox.SetCell(right, 0, '┐', fg, bg)
+	termbox.SetCell(0, bottom, '└', fg, bg)
+	termbox.SetCell(right, bottom, '┘', fg, bg)
+
 	head := g.snake[0]
-	fmt.Printf("Игра создана: поле %dx%d, змейка в (%d, %d), направление %s, уровень %d\n",
-		g.width, g.height, head.x, head.y, dirName(g.dir), g.level)
+	termbox.SetCell(head.x+1, head.y+1, '@', termbox.ColorGreen|termbox.AttrBold, bg)
+
+	info := fmt.Sprintf(" Score: %d Level: %d ", g.score, g.level)
+	for i, r := range []rune(info) {
+		termbox.SetCell(i+2, 0, r, termbox.ColorYellow, bg)
+	}
+
+	termbox.Flush()
+}
+
+func main() {
+	err := termbox.Init()
+	if err != nil {
+		panic(err)
+	}
+	defer termbox.Close()
+
+	g := NewGame(40, 20)
+	g.draw()
+	for {
+		e := termbox.PollEvent()
+		if e.Type == termbox.EventKey && e.Key == termbox.KeyEsc {
+			return
+		}
+	}
 }
