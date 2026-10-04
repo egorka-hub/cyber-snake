@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/nsf/termbox-go"
 )
@@ -53,8 +54,8 @@ func dirName(d Point) string {
 
 func (g *Game) draw() {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	right := g.width + 1
-	bottom := g.height + 1
+	right := g.width - 1
+	bottom := g.height - 1
 	fg, bg := termbox.ColorDefault, termbox.ColorDefault
 
 	for x := 1; x < right; x++ {
@@ -73,9 +74,9 @@ func (g *Game) draw() {
 	termbox.SetCell(right, bottom, '┘', fg, bg)
 
 	head := g.snake[0]
-	termbox.SetCell(head.x+1, head.y+1, g.dir.ToRune(), termbox.ColorGreen|termbox.AttrBold, bg)
+	termbox.SetCell(head.x, head.y, g.dir.ToRune(), termbox.ColorGreen|termbox.AttrBold, bg)
 	for _, seg := range g.snake[1:] {
-		termbox.SetCell(seg.x+1, seg.y+1, '○', termbox.ColorGreen|termbox.AttrBold, bg)
+		termbox.SetCell(seg.x, seg.y, '○', termbox.ColorGreen|termbox.AttrBold, bg)
 	}
 
 	info := fmt.Sprintf(" Score: %d Level: %d ", g.score, g.level)
@@ -134,14 +135,33 @@ func (g *Game) handleInput(ev termbox.Event) {
 	g.dir = newDir
 }
 
+func (g *Game) isOnSnake(p Point) bool {
+	return slices.Contains(g.snake, p)
+}
+
+func (g *Game) isOnMalware(p Point) bool {
+	return slices.Contains(g.malware, p)
+}
+
+func (g *Game) isOutOfBounds(p Point) bool {
+	x, y := p.x, p.y
+	return x < 1 || x > g.width-2 || y < 1 || y > g.height-2
+}
+
 func main() {
+	g := NewGame(40, 20)
+
+	fmt.Printf("Точка (20, 10) на змейке: %v\n", g.isOnSnake(Point{20, 10}))
+	fmt.Printf("Точка (5, 5) на змейке: %v\n", g.isOnSnake(Point{5, 5}))
+	fmt.Printf("Точка (0, 5) за границами: %v\n", g.isOutOfBounds(Point{0, 5}))
+	fmt.Printf("Точка (5, 5) за границами: %v\n", g.isOutOfBounds(Point{5, 5}))
+
 	err := termbox.Init()
 	if err != nil {
 		panic(err)
 	}
 	defer termbox.Close()
 
-	g := NewGame(40, 20)
 	g.draw()
 
 	eventCh := make(chan termbox.Event)
