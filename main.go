@@ -73,7 +73,10 @@ func (g *Game) draw() {
 	termbox.SetCell(right, bottom, '┘', fg, bg)
 
 	head := g.snake[0]
-	termbox.SetCell(head.x+1, head.y+1, '@', termbox.ColorGreen|termbox.AttrBold, bg)
+	termbox.SetCell(head.x+1, head.y+1, g.dir.ToRune(), termbox.ColorGreen|termbox.AttrBold, bg)
+	for _, seg := range g.snake[1:] {
+		termbox.SetCell(seg.x+1, seg.y+1, '○', termbox.ColorGreen|termbox.AttrBold, bg)
+	}
 
 	info := fmt.Sprintf(" Score: %d Level: %d ", g.score, g.level)
 	for i, r := range []rune(info) {
@@ -81,6 +84,54 @@ func (g *Game) draw() {
 	}
 
 	termbox.Flush()
+}
+
+func (p Point) ToRune() rune {
+	switch p {
+	case Point{1, 0}:
+		return '▶'
+	case Point{-1, 0}:
+		return '◀'
+	case Point{0, -1}:
+		return '▲'
+	case Point{0, 1}:
+		return '▼'
+	}
+	return '●'
+}
+
+func (p Point) oppositeDir() Point {
+	return Point{-p.x, -p.y}
+}
+
+func (g *Game) handleInput(ev termbox.Event) {
+	var newDir Point
+	if ev.Type != termbox.EventKey {
+		return
+	}
+	switch {
+	case ev.Key == termbox.KeyArrowUp || ev.Ch == 'w' || ev.Ch == 'W' || ev.Ch == 'ц' || ev.Ch == 'Ц':
+		newDir = Point{0, -1}
+	case ev.Key == termbox.KeyArrowDown || ev.Ch == 's' || ev.Ch == 'S' || ev.Ch == 'ы' || ev.Ch == 'Ы':
+		newDir = Point{0, 1}
+	case ev.Key == termbox.KeyArrowLeft || ev.Ch == 'a' || ev.Ch == 'A' || ev.Ch == 'ф' || ev.Ch == 'Ф':
+		newDir = Point{-1, 0}
+	case ev.Key == termbox.KeyArrowRight || ev.Ch == 'd' || ev.Ch == 'D' || ev.Ch == 'в' || ev.Ch == 'В':
+		newDir = Point{1, 0}
+	case ev.Key == termbox.KeyEsc || ev.Ch == 'q' || ev.Ch == 'Q' || ev.Ch == 'й' || ev.Ch == 'Й':
+		select {
+		case <-g.quit:
+		default:
+			close(g.quit)
+		}
+		return
+	default:
+		return
+	}
+	if newDir == g.dir.oppositeDir() {
+		return
+	}
+	g.dir = newDir
 }
 
 func main() {
@@ -92,10 +143,22 @@ func main() {
 
 	g := NewGame(40, 20)
 	g.draw()
+
+	eventCh := make(chan termbox.Event)
+	go func() {
+		for {
+			eventCh <- termbox.PollEvent()
+		}
+	}()
+
 	for {
-		e := termbox.PollEvent()
-		if e.Type == termbox.EventKey && e.Key == termbox.KeyEsc {
+		select {
+		case ev := <-eventCh:
+			g.handleInput(ev)
+			g.draw()
+		case <-g.quit:
 			return
 		}
 	}
+
 }
