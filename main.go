@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"slices"
+	"time"
 
 	"github.com/nsf/termbox-go"
 )
@@ -178,13 +179,24 @@ func (g *Game) placeMalware() {
 	}
 }
 
+func (g *Game) move() {
+	head := g.snake[0]
+	newHead := Point{head.x + g.dir.x, head.y + g.dir.y}
+	if g.isOnMalware(newHead) || g.isOutOfBounds(newHead) || g.isOnSnake(newHead) {
+		g.gameOver = true
+		return
+	}
+	g.snake = append([]Point{newHead}, g.snake...)
+	if g.food == newHead {
+		g.score++
+		g.placeFood()
+	} else {
+		g.snake = g.snake[:len(g.snake)-1]
+	}
+}
+
 func main() {
 	g := NewGame(40, 20)
-
-	fmt.Printf("Точка (20, 10) на змейке: %v\n", g.isOnSnake(Point{20, 10}))
-	fmt.Printf("Точка (5, 5) на змейке: %v\n", g.isOnSnake(Point{5, 5}))
-	fmt.Printf("Точка (0, 5) за границами: %v\n", g.isOutOfBounds(Point{0, 5}))
-	fmt.Printf("Точка (5, 5) за границами: %v\n", g.isOutOfBounds(Point{5, 5}))
 
 	err := termbox.Init()
 	if err != nil {
@@ -201,10 +213,17 @@ func main() {
 		}
 	}()
 
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
 	for {
 		select {
 		case ev := <-eventCh:
 			g.handleInput(ev)
+			g.draw()
+		case <-ticker.C:
+			if !g.gameOver {
+				g.move()
+			}
 			g.draw()
 		case <-g.quit:
 			return
