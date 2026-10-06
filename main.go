@@ -43,21 +43,12 @@ func NewGame(width, height int) *Game {
 	return g
 }
 
-func dirName(d Point) string {
-	switch d {
-	case Point{1, 0}:
-		return "вправо"
-	case Point{-1, 0}:
-		return "влево"
-	case Point{0, -1}:
-		return "вверх"
-	case Point{0, 1}:
-		return "вниз"
-	}
-	return "неизвестно"
-}
-
 func (g *Game) draw() {
+	if g.gameOver {
+		g.drawGameOver()
+		return
+	}
+
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	right := g.width - 1
 	bottom := g.height - 1
@@ -205,6 +196,23 @@ func tickInterval(level int) time.Duration {
 	return interval
 }
 
+func drawCenteredString(y int, s string, width int, fg termbox.Attribute) {
+	ch := []rune(s)
+	x := (width - len(ch)) / 2
+	for i, r := range ch {
+		termbox.SetCell(x+i, y, r, fg, termbox.ColorDefault)
+	}
+}
+
+func (g *Game) drawGameOver() {
+	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	drawCenteredString(g.height/2, "GAME OVER", g.width, termbox.ColorRed)
+	drawCenteredString(g.height/2+1, fmt.Sprintf("Score: %d", g.score), g.width, termbox.ColorWhite)
+	drawCenteredString(g.height/2+2, fmt.Sprintf("Level: %d", g.level), g.width, termbox.ColorWhite)
+	drawCenteredString(g.height/2+3, "R — перезапуск, Q — выход", g.width, termbox.ColorWhite)
+	termbox.Flush()
+}
+
 func main() {
 	g := NewGame(40, 20)
 
@@ -244,5 +252,4 @@ func main() {
 			return
 		}
 	}
-
 }
