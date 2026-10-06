@@ -189,10 +189,20 @@ func (g *Game) move() {
 	g.snake = append([]Point{newHead}, g.snake...)
 	if g.food == newHead {
 		g.score++
+		if g.score%5 == 0 {
+			g.level++
+			g.placeMalware()
+		}
 		g.placeFood()
 	} else {
 		g.snake = g.snake[:len(g.snake)-1]
 	}
+
+}
+
+func tickInterval(level int) time.Duration {
+	interval := max(100*time.Millisecond-time.Duration(level-1)*10*time.Millisecond, 40*time.Millisecond)
+	return interval
 }
 
 func main() {
@@ -213,7 +223,8 @@ func main() {
 		}
 	}()
 
-	ticker := time.NewTicker(100 * time.Millisecond)
+	ticker := time.NewTicker(tickInterval(g.level))
+
 	defer ticker.Stop()
 	for {
 		select {
@@ -222,7 +233,11 @@ func main() {
 			g.draw()
 		case <-ticker.C:
 			if !g.gameOver {
+				oldLevel := g.level
 				g.move()
+				if oldLevel != g.level {
+					ticker.Reset(tickInterval(g.level))
+				}
 			}
 			g.draw()
 		case <-g.quit:
