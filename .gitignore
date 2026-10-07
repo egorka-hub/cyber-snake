@@ -1,6 +1,22 @@
 # Бинарник, создаваемый go build
 /cyber-snake
 *.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Тестовые бинарники и профили покрытия
+*.test
+*.out
+coverage.*
+
+# Зависимости (если используется go mod vendor)
+vendor/
+
+# Локальные настройки рабочего окружения Go
+go.work
+go.work.sum
 
 # IDE
 .idea/
