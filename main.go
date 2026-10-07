@@ -112,6 +112,19 @@ func (g *Game) handleInput(ev termbox.Event) {
 	if ev.Type != termbox.EventKey {
 		return
 	}
+	if g.gameOver {
+		switch {
+		case ev.Ch == 'R' || ev.Ch == 'r' || ev.Ch == 'К' || ev.Ch == 'к':
+			*g = *NewGame(g.width, g.height)
+		case ev.Key == termbox.KeyEsc || ev.Ch == 'q' || ev.Ch == 'Q' || ev.Ch == 'й' || ev.Ch == 'Й':
+			select {
+			case <-g.quit:
+			default:
+				close(g.quit)
+			}
+		}
+		return
+	}
 	switch {
 	case ev.Key == termbox.KeyArrowUp || ev.Ch == 'w' || ev.Ch == 'W' || ev.Ch == 'ц' || ev.Ch == 'Ц':
 		newDir = Point{0, -1}
@@ -237,7 +250,11 @@ func main() {
 	for {
 		select {
 		case ev := <-eventCh:
+			oldLevel := g.level
 			g.handleInput(ev)
+			if oldLevel != g.level {
+				ticker.Reset(tickInterval(g.level))
+			}
 			g.draw()
 		case <-ticker.C:
 			if !g.gameOver {
