@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"slices"
 	"time"
 
@@ -226,15 +227,15 @@ func (g *Game) drawGameOver() {
 	termbox.Flush()
 }
 
-func main() {
-	g := NewGame(40, 20)
-
+func playGame() {
 	err := termbox.Init()
 	if err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, "Не удалось инициализировать termbox:", err)
+		os.Exit(1)
 	}
 	defer termbox.Close()
 
+	g := NewGame(40, 20)
 	g.draw()
 
 	eventCh := make(chan termbox.Event)
@@ -269,4 +270,8 @@ func main() {
 			return
 		}
 	}
+}
+
+func main() {
+	playGame()
 }
